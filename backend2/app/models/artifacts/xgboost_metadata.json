@@ -1,0 +1,109 @@
+{
+  "model_name": "XGBoost Time-Series Sales Forecaster",
+  "model_version": "1.0.0",
+  "created_at": "2026-10-25T19:33:34.445565",
+  "target_variable": "sales",
+  "target_transform": "log1p(sales) with expm1 inverse clipping at 0",
+  "primary_metric": "RMSLE",
+  "train_date_range": {
+    "start": "2016-01-01",
+    "end": "2017-07-30",
+    "observations": 1028214
+  },
+  "validation_date_range": {
+    "start": "2017-07-31",
+    "end": "2017-08-15",
+    "horizon_days": 16,
+    "observations": 28512
+  },
+  "hyperparameters": {
+    "n_estimators": 350,
+    "max_depth": 7,
+    "learning_rate": 0.06,
+    "subsample": 0.8,
+    "colsample_bytree": 0.75,
+    "reg_alpha": 0.5,
+    "reg_lambda": 2.0,
+    "tree_method": "hist",
+    "random_state": 42,
+    "n_jobs": 12
+  },
+  "evaluation_metrics": {
+    "baseline_lag_7": {
+      "RMSLE": 0.5693670635937594,
+      "MAE": 100.23036455751964,
+      "RMSE": 350.0605134020118,
+      "WAPE (%)": 21.45603709172551
+    },
+    "xgboost_one_step": {
+      "RMSLE": 0.38343125726828314,
+      "MAE": 66.7771220903016,
+      "RMSE": 232.37409475675466,
+      "WAPE (%)": 14.294793945660675
+    },
+    "xgboost_recursive_16day": {
+      "RMSLE": 0.4088198204346991,
+      "MAE": 79.73916749313466,
+      "RMSE": 284.548860792007,
+      "WAPE (%)": 17.06954317635128
+    }
+  },
+  "feature_columns": [
+    "store_nbr",
+    "family",
+    "type",
+    "cluster",
+    "city",
+    "state",
+    "onpromotion",
+    "dcoilwtico",
+    "oil_lag_1",
+    "oil_rolling_mean_7",
+    "is_holiday",
+    "is_national_holiday",
+    "is_workday",
+    "year",
+    "month",
+    "day",
+    "dayofweek",
+    "dayofyear",
+    "weekofyear",
+    "is_weekend",
+    "sales_lag_1",
+    "sales_lag_7",
+    "sales_lag_14",
+    "sales_lag_28",
+    "sales_rolling_mean_7",
+    "sales_rolling_mean_14",
+    "sales_rolling_mean_28",
+    "sales_rolling_std_7",
+    "sales_rolling_std_28"
+  ],
+  "categorical_features": [
+    "store_nbr",
+    "family",
+    "type",
+    "cluster",
+    "city",
+    "state"
+  ],
+  "categorical_cardinalities": {
+    "store_nbr": 54,
+    "family": 33,
+    "type": 5,
+    "cluster": 17,
+    "city": 22,
+    "state": 16
+  },
+  "forecast_strategy": "Recursive Multi-Step Forecasting (Lags 1, 7, 14, 28 and Shifted Rolling Means 7, 14, 28, Rolling Stds 7, 28)",
+  "external_covariates": [
+    "oil_price (dcoilwtico)",
+    "oil_lag_1",
+    "oil_rolling_mean_7",
+    "is_holiday",
+    "is_national_holiday",
+    "is_workday",
+    "onpromotion"
+  ],
+  "execution_duration_seconds": 33.49
+}

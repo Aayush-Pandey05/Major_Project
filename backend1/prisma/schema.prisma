@@ -1,0 +1,112 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model ChatSession {
+  id                 String         @id @default(uuid())
+  anonymousSessionId String         @default("default_session")
+  title              String         @default("New Analysis")
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  messages           ChatMessage[]
+  agentRuns          AgentRun[]
+
+  @@index([anonymousSessionId, updatedAt])
+}
+
+model ChatMessage {
+  id             String      @id @default(uuid())
+  sessionId      String
+  role           String      // "user" | "assistant" | "system"
+  content        String      @db.Text
+  planIntent     String?
+  structuredData Json?
+  createdAt      DateTime    @default(now())
+  session        ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+}
+
+model Dataset {
+  id                 String   @id @default(uuid())
+  anonymousSessionId String   @default("default_session")
+  originalFilename   String
+  storedFilename     String
+  filePath           String
+  sha256Checksum     String
+  rowCount           Int      @default(0)
+  columnCount        Int      @default(0)
+  metadataJson       Json?
+  createdAt          DateTime @default(now())
+
+  @@index([anonymousSessionId, createdAt])
+}
+
+model DataSource {
+  id                 String   @id @default(uuid())
+  anonymousSessionId String   @default("default_session")
+  name               String
+  type               String   // "postgresql" | "mysql" | "sqlite"
+  host               String?
+  port               Int?
+  databaseName       String?
+  username           String?
+  isReadOnly         Boolean  @default(true)
+  createdAt          DateTime @default(now())
+
+  @@index([anonymousSessionId])
+}
+
+model AgentRun {
+  id              String           @id @default(uuid())
+  sessionId       String?
+  status          String           // "running" | "completed" | "failed"
+  planIntent      String?
+  executionTimeMs Float?
+  error           String?          @db.Text
+  createdAt       DateTime         @default(now())
+  session         ChatSession?     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  metrics         AgentRunMetric[]
+
+  @@index([sessionId])
+}
+
+model AgentRunMetric {
+  id          String   @id @default(uuid())
+  agentRunId  String
+  metricName  String
+  metricValue Float
+  createdAt   DateTime @default(now())
+  agentRun    AgentRun @relation(fields: [agentRunId], references: [id], onDelete: Cascade)
+
+  @@index([agentRunId])
+}
+
+model ModelEvaluation {
+  id           String   @id @default(uuid())
+  modelName    String
+  modelVersion String
+  metricsJson  Json
+  createdAt    DateTime @default(now())
+
+  @@index([modelName])
+}
+
+model AnalysisResult {
+  id           String   @id @default(uuid())
+  sessionId    String?
+  title        String
+  resultType   String   // "forecast" | "anomaly" | "report" | "chart"
+  fileId       String
+  downloadUrl  String
+  metadataJson Json?
+  createdAt    DateTime @default(now())
+
+  @@index([sessionId])
+}

@@ -1,0 +1,245 @@
+{
+  "model_name": "isolation_forest_retail_model",
+  "model_version": "1.0.0",
+  "artifact_file": "isolation_forest_retail_model.joblib",
+  "artifact_sha256": "fcf4d92930d83ce1e5772697ea7e55b487ade4a60e896e1faed69410331072f1",
+  "artifact_size_mb": 3.69,
+  "artifact_format_version": 1,
+  "feature_pipeline_version": "1.0.0",
+  "training_timestamp_utc": "2026-10-25T18:31:28+00:00",
+  "intended_use": "Model trained on Online Retail II-style retail transactions. Scores for other industries/schemas are not validated; a flag means 'review', not 'fraud'.",
+  "scope_limitation": "Trained on Online Retail II only. Not validated for other industries or schemas.",
+  "training_data": {
+    "source_files": [
+      "Year 2009-2010.csv",
+      "Year 2010-2011.csv"
+    ],
+    "rows_per_file": {
+      "Year 2009-2010.csv": 525461,
+      "Year 2010-2011.csv": 541910
+    },
+    "cross_file_duplicate_rows_removed": 22523,
+    "xlsx_workbook_used": false,
+    "xlsx_matches_csv": true,
+    "rows_after_dedup": 1044848,
+    "invoices_total": 53628,
+    "invoices_scored_as_purchases": 39516,
+    "date_range": [
+      "2009-12-01 07:45:00",
+      "2011-12-09 12:50:00"
+    ],
+    "splits": {
+      "train": {
+        "invoices": 27661,
+        "start": "2009-12-01 07:45:00",
+        "end": "2011-05-26 16:30:00"
+      },
+      "validation": {
+        "invoices": 5927,
+        "start": "2011-05-26 17:15:00",
+        "end": "2011-09-26 14:25:00"
+      },
+      "test": {
+        "invoices": 5928,
+        "start": "2011-09-26 14:30:00",
+        "end": "2011-12-09 12:50:00"
+      }
+    },
+    "split_cutoffs": {
+      "validation_start": "2011-05-26 17:15:00",
+      "test_start": "2011-09-26 14:30:00"
+    },
+    "final_model_fit_on": "train + validation invoices",
+    "final_fit_invoices": 33588
+  },
+  "feature_names": [
+    "total_invoice_value",
+    "total_quantity",
+    "unique_product_count",
+    "average_unit_price",
+    "max_line_value",
+    "price_std",
+    "hour_of_day",
+    "day_of_week"
+  ],
+  "feature_order_is_significant": true,
+  "feature_descriptions": {
+    "total_invoice_value": "Sum of Quantity x Price over the invoice's merchandise lines (currency units of the data).",
+    "total_quantity": "Total units across merchandise lines.",
+    "unique_product_count": "Number of distinct merchandise StockCodes in the invoice.",
+    "line_item_count": "Number of merchandise lines (candidate; dropped as redundant with unique_product_count).",
+    "average_unit_price": "Mean of the line unit prices (unweighted) over merchandise lines.",
+    "max_line_value": "Largest absolute line value (|Quantity x Price|) in the invoice.",
+    "price_std": "Population standard deviation of line unit prices (0 for single-line invoices).",
+    "hour_of_day": "Hour (0-23) of the invoice's earliest line timestamp.",
+    "day_of_week": "Weekday of the invoice (Monday=0 ... Sunday=6)."
+  },
+  "features_dropped": [
+    {
+      "feature": "line_item_count",
+      "reason": "redundant: |Spearman|=0.9993 with 'unique_product_count' (threshold 0.98)"
+    }
+  ],
+  "preprocessing": {
+    "log1p_columns": [],
+    "transform_selected": "raw",
+    "scaling": "none (tree model; log1p applied only to the listed columns)",
+    "missing_customer_id": "kept (22.5% of lines); never used as a feature; has_customer_id is an informational column",
+    "non_product_stock_codes": [
+      "ADJUST",
+      "ADJUST2",
+      "AMAZONFEE",
+      "B",
+      "BANK CHARGES",
+      "C2",
+      "C3",
+      "CRUK",
+      "D",
+      "DOT",
+      "GIFT",
+      "M",
+      "POST",
+      "S",
+      "TEST001",
+      "TEST002"
+    ],
+    "non_product_prefixes": [
+      "GIFT_"
+    ],
+    "model_population": "invoices with prefix other than C/A, containing >=1 merchandise line with Quantity>0 and Price>0",
+    "total_invoice_value": "sum(Quantity*Price) over merchandise purchase lines of the invoice; service/charge lines excluded and reported separately",
+    "excluded_from_model": [
+      "cancellations/returns (C prefix)",
+      "A-prefix bad-debt adjustments",
+      "zero-price or non-positive-quantity stock write-offs",
+      "service/charge lines (POST, DOT, M, D, BANK CHARGES, ...)"
+    ],
+    "outliers": "no outlier removal",
+    "within_invoice_repeated_lines": "kept (cannot be confirmed as errors); counted in duplicate_line_count",
+    "price_std": "population std (ddof=0); 0 for single-line invoices",
+    "hour_day": "invoice_datetime = earliest line timestamp; day_of_week Monday=0"
+  },
+  "model": {
+    "algorithm": "sklearn.ensemble.IsolationForest",
+    "params": {
+      "n_estimators": 300,
+      "max_samples": 4096,
+      "max_features": 1.0,
+      "contamination": 0.01,
+      "random_state": 42,
+      "bootstrap": false
+    },
+    "contamination": 0.01,
+    "contamination_meaning": "operating point = fraction of the fitting data scored beyond the threshold; NOT an estimate of the true anomaly rate",
+    "threshold_anomaly_score": 0.558716583436735,
+    "offset_": -0.558716583436735,
+    "prediction_convention": {
+      "1": "normal",
+      "-1": "potential anomaly"
+    },
+    "is_anomaly": "true when prediction == -1",
+    "anomaly_score": "-score_samples; higher = more anomalous",
+    "decision_function": "score_samples - offset_ ; negative = flagged"
+  },
+  "expected_input_schema": {
+    "required_columns": [
+      "Invoice",
+      "StockCode",
+      "Quantity",
+      "InvoiceDate",
+      "Price"
+    ],
+    "optional_columns": [
+      "Description",
+      "Customer ID",
+      "Country"
+    ],
+    "accepted_header_aliases": {
+      "InvoiceNo": "Invoice",
+      "UnitPrice": "Price",
+      "CustomerID": "Customer ID"
+    },
+    "types": {
+      "Invoice": "text (digits; C/A prefix for cancellations/adjustments)",
+      "StockCode": "text",
+      "Quantity": "number",
+      "InvoiceDate": "datetime; text 'M/D/YYYY H:MM' (month first), ISO-8601, or datetime dtype",
+      "Price": "number",
+      "Customer ID": "text/number, may be missing",
+      "Country": "text",
+      "Description": "text"
+    },
+    "csv_encoding": "utf-8 or cp1252 (auto-detected)"
+  },
+  "engineered_feature_schema": {
+    "total_invoice_value": "float64",
+    "total_quantity": "float64",
+    "unique_product_count": "float64",
+    "average_unit_price": "float64",
+    "max_line_value": "float64",
+    "price_std": "float64",
+    "hour_of_day": "float64",
+    "day_of_week": "float64"
+  },
+  "evaluation_summary": {
+    "evaluation_type": "unsupervised diagnostics + synthetic-anomaly injection (no ground-truth labels exist)",
+    "test_flag_rate": 0.013832658569500675,
+    "synthetic_test_mean": {
+      "pr_auc": 0.3344,
+      "roc_auc": 0.8874,
+      "precision_at_k": 0.3315,
+      "precision": 0.3666,
+      "recall": 0.2551,
+      "f1": 0.3007
+    },
+    "synthetic_test_sd": {
+      "pr_auc": 0.037,
+      "roc_auc": 0.0138,
+      "precision_at_k": 0.0342,
+      "precision": 0.0292,
+      "recall": 0.0291,
+      "f1": 0.0299
+    },
+    "seed_stability_spearman_test": 0.987613663778981,
+    "baseline_val_synthetic_pr_auc": 0.3220394977943976,
+    "selected_val_synthetic_pr_auc": 0.3469996606344038,
+    "note": "Synthetic-injection metrics are not real-world accuracy; see evaluation_report.md."
+  },
+  "runtime": {
+    "final_fit_seconds": 1.11,
+    "total_pipeline_seconds": 249.0,
+    "peak_rss_mb_training_process": 1435.0
+  },
+  "random_seeds": {
+    "model": 42,
+    "tuning_model_seeds": [
+      42,
+      43,
+      44
+    ],
+    "tuning_injection_seeds": [
+      100,
+      101,
+      102
+    ],
+    "test_injection_seeds": [
+      200,
+      201,
+      202,
+      203,
+      204
+    ]
+  },
+  "library_versions": {
+    "python": "3.12.3",
+    "scikit-learn": "1.8.0",
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "scipy": "1.17.1",
+    "joblib": "1.5.3"
+  },
+  "integration_tests": {
+    "passed": 27,
+    "total": 27
+  }
+}
